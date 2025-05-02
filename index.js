@@ -35,7 +35,7 @@ app.use("/api/getTranslation", getTranslationRoute);
 app.use("/api/getSentence", getSentenceRoute);
 app.use("/api/generateImage", generateImageRoute);
 
-// ✅ Start server
+// ✅ Start server local
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
