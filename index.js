@@ -13,9 +13,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Allow CORS from specific domain (c3app.net)
+// Support multiple origins via .env
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net")
+  .split(",")
+  .map(origin => origin.trim());
+
 app.use(cors({
-  origin: "https://www.c3app.net",
+  origin: (origin, callback) => {
+    // Allow requests from browser or tools like Postman (no origin)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "OPTIONS"],
   credentials: true,
 }));
