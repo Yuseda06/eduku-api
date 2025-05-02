@@ -11,16 +11,22 @@ router.post("/", async (req, res) => {
   const { text } = req.body;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "user", content: `Make a sentence using the word: ${text}` }],
+      messages: [
+        {
+          role: "user",
+          content: `Make sentences in English for the following word: ${text}. Provide minimum 2 example sentences using simple words. Write the word ${text} in UPPERCASE and bold (**${text}**). Add a blank line between sentences.`,
+        },
+      ],
+      stream: false,
     });
 
-    const result = completion.choices[0].message.content;
-    res.json({ result });
-  } catch (err) {
-    console.error("❌ Sentence Error:", err);
-    res.status(500).json({ error: "Sentence generation failed." });
+    const messageContent = response.choices[0].message.content;
+    return res.json({ result: messageContent });
+  } catch (error) {
+    console.error("Error fetching sentence:", error);
+    return res.status(500).json({ error: "Sentence generation failed." });
   }
 });
 
