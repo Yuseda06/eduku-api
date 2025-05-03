@@ -6,7 +6,8 @@ import getResponseRoute from "./routes/getResponse.js";
 import getTranslationRoute from "./routes/getTranslation.js";
 import getSentenceRoute from "./routes/getSentence.js";
 import generateImageRoute from "./routes/generateImage.js";
-
+import ttsRoute from "./routes/tts.js";
+import pronounceRoute from "./routes/pronounce.js";
 dotenv.config();
 
 const app = express();
@@ -36,7 +37,8 @@ app.use("/api/getResponse", getResponseRoute);
 app.use("/api/getTranslation", getTranslationRoute);
 app.use("/api/getSentence", getSentenceRoute);
 app.use("/api/generateImage", generateImageRoute);
-
+app.use("/api/tts", ttsRoute);
+app.use("/api/pronounce", pronounceRoute);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
