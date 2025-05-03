@@ -36,3 +36,5 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Translation failed." });
   }
 });
+
+export default router;
