@@ -1,4 +1,3 @@
-// index.js
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -13,18 +12,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Support multiple origins via .env
+// ✅ Fix: Setup CORS betul
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net")
   .split(",")
   .map(origin => origin.trim());
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests from browser or tools like Postman (no origin)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("CORS blocked"));
     }
   },
   methods: ["GET", "POST", "OPTIONS"],
@@ -33,7 +31,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// Routes
+// ✅ Route
 app.use("/api/getResponse", getResponseRoute);
 app.use("/api/getTranslation", getTranslationRoute);
 app.use("/api/getSentence", getSentenceRoute);
