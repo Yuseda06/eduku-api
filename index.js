@@ -10,6 +10,7 @@ import ttsRoute from "./routes/tts.js";
 import pronounceRoute from "./routes/pronounce.js";
 import getChoicesRoute from "./routes/getChoices.js";
 import getQuizQuestionRoute from "./routes/getQuizQuestion.js";
+import handleAlexaRoute from "./routes/handleAlexa.js";
 dotenv.config();
 
 const app = express();
@@ -43,6 +44,7 @@ app.use("/api/tts", ttsRoute);
 app.use("/api/pronounce", pronounceRoute);
 app.use("/api/getChoices", getChoicesRoute);
 app.use("/api/getQuizQuestion", getQuizQuestionRoute);
+app.use("/api/handleAlexa", handleAlexaRoute);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
