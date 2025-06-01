@@ -25,6 +25,9 @@ router.get("/", async (req, res) => {
       .select("*")
       .order("created_at", { ascending: false });
 
+    console.log("Supabase error:", error);
+    console.log("Supabase data:", data);
+
     if (error || !data || data.length === 0) {
       return res.status(404).json({ error: "No vocab found" });
     }
