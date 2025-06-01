@@ -20,13 +20,13 @@ router.post("/", async (req, res) => {
     sessionAttributes: {},
   };
 
-  // ✅ Bila user buka skill: "Alexa, open eduku vocab"
+  // 👉 BILA USER LAUNCH
   if (requestType === "LaunchRequest") {
-    response.response.outputSpeech.text = "Welcome to Eduku Vocab! Say 'start quiz' to begin.";
+    response.response.outputSpeech.text = "Welcome to Vocab Quiz! Say 'start quiz' to begin.";
     return res.json(response);
   }
 
-  // ✅ Bila user start kuiz
+  // 👉 START QUIZ
   if (requestType === "IntentRequest" && intentName === "QuizIntent") {
     try {
       const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
@@ -36,30 +36,19 @@ router.post("/", async (req, res) => {
         : quizList;
 
       if (!quiz || !quiz.answer || !quiz.choices) {
-        throw new Error("Incomplete quiz data from API.");
+        throw new Error("Incomplete quiz data");
       }
 
       const choices = Array.isArray(quiz.choices) ? quiz.choices : JSON.parse(quiz.choices);
+      const spelling = quiz.word?.split('').join('-').toUpperCase();
 
+      // 👉 Simpan jawapan dan choices dalam session
       response.sessionAttributes.correctAnswer = quiz.answer;
+      response.sessionAttributes.choices = choices;
 
-      const ssmlResponse = `
-        <speak>
-          Spell this word: <say-as interpret-as="spell-out">${quiz.word}</say-as>.
-          ${quiz.question}
-          Your options are:
-          A, ${choices[0]};
-          B, ${choices[1]};
-          C, ${choices[2]};
-          D, ${choices[3]}.
-          What's your answer?
-        </speak>
-      `.trim();
-
-      response.response.outputSpeech = {
-        type: "SSML",
-        ssml: ssmlResponse,
-      };
+      response.response.outputSpeech.text = 
+        `Spell this word: ${spelling}. ` +
+        `${quiz.question} Your options are: A, ${choices[0]}; B, ${choices[1]}; C, ${choices[2]}; D, ${choices[3]}. What's your answer?`;
     } catch (err) {
       console.error("QuizIntent error:", err);
       response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
@@ -68,24 +57,32 @@ router.post("/", async (req, res) => {
     return res.json(response);
   }
 
-  // ✅ Bila user jawab
+  // 👉 HANDLE JAWAPAN
   if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
-    const userAnswer = req.body.request.intent?.slots?.option?.value;
-    const correct = session.attributes?.correctAnswer;
+    const userAnswer = req.body.request.intent?.slots?.option?.value?.toUpperCase();
+    const correctAnswer = session.attributes?.correctAnswer;
+    const choices = session.attributes?.choices;
 
-    if (!correct) {
+    if (!correctAnswer || !choices) {
       response.response.outputSpeech.text = "Please start a quiz first by saying 'start quiz'.";
-    } else if (userAnswer?.toLowerCase() === correct.toLowerCase()) {
-      response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
     } else {
-      response.response.outputSpeech.text = `Oops, the correct answer is ${correct}. Try another question by saying 'start quiz'.`;
+      const correctOptionIndex = choices.findIndex(c => c.toLowerCase() === correctAnswer.toLowerCase());
+      const correctLetter = ["A", "B", "C", "D"][correctOptionIndex];
+
+      if (userAnswer === correctLetter) {
+        response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
+      } else {
+        response.response.outputSpeech.text = `Oops, the correct answer is ${correctLetter}, which is ${correctAnswer}. Try another question by saying 'start quiz'.`;
+      }
     }
 
     response.sessionAttributes.correctAnswer = null;
+    response.sessionAttributes.choices = null;
+
     return res.json(response);
   }
 
-  // ❌ fallback kalau tak match apa-apa
+  // 👉 DEFAULT
   response.response.outputSpeech.text = "Sorry, I didn't understand that. Try saying 'start quiz'.";
   return res.json(response);
 });
