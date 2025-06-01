@@ -14,12 +14,11 @@ const supabase = createClient(
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("vocab")
-      .select("*")
-      .not("answer", "is", null)
-      .not("choices", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(1); // tukar ke `random()` kalau nak betul-betul rawak
+    .from("vocab")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1); // remove .not("answer", ...) dulu
+  
 
     if (error || !data || data.length === 0) {
       return res.status(404).json({ error: "No vocab found" });
