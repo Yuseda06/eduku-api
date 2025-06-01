@@ -15,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Fix: Setup CORS betul
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net")
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net" || "http://localhost:8081")
   .split(",")
   .map(origin => origin.trim());
 
