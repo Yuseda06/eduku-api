@@ -19,6 +19,7 @@ console.log("SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY)
 
 
 router.get("/", async (req, res) => {
+  console.log("Handler called!");
   try {
     const { data, error } = await supabase
       .from("vocab")
