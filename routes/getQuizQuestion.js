@@ -11,10 +11,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-
+// 🎲 Function utk shuffle array
+function shuffle(array) {
+  return array
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+}
 
 router.get("/", async (req, res) => {
-  console.log("Handler called!");
+
 
   try {
     const { data, error } = await supabase
@@ -25,14 +31,17 @@ router.get("/", async (req, res) => {
       return res.status(404).json({ error: "No vocab found" });
     }
 
-    // 🎲 Ambil 1 random dari senarai
+    // Ambil satu vocab random
     const randomIndex = Math.floor(Math.random() * data.length);
     const vocab = data[randomIndex];
+
+    // Shuffle pilihan jawapan
+    const shuffledChoices = shuffle(vocab.choices);
 
     const question = {
       word: vocab.word,
       question: `What is the meaning of "${vocab.word}"?`,
-      choices: vocab.choices,
+      choices: shuffledChoices,
       answer: vocab.answer,
       sentence: vocab.sentence,
     };
