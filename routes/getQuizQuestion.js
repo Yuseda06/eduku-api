@@ -19,10 +19,9 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase
       .from("vocab")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(1);
 
-    console.log("Supabase error:", error);
-    console.log("Supabase data:", data);
 
     if (error || !data || data.length === 0) {
       return res.status(404).json({ error: "No vocab found" });
