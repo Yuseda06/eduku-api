@@ -21,31 +21,29 @@ router.post("/", async (req, res) => {
 
   if (intentName === "QuizIntent") {
 
-  
-
     try {
         const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
-        const quiz = quizRes[0];
+        const quiz = await quizRes.json(); // ✅ fix sini
+      
         console.log("🧪 Quiz Data Debug:", JSON.stringify(quiz, null, 2));
-
-        
+      
         if (!quiz || !quiz.answer || !quiz.choices) {
           throw new Error("Incomplete quiz data from API.");
         }
-        
-        // Handle jika choices dalam bentuk string
+      
         const choices = Array.isArray(quiz.choices)
           ? quiz.choices
           : JSON.parse(quiz.choices);
-        
+      
         response.sessionAttributes.correctAnswer = quiz.answer;
-        
+      
         response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${choices[0]}; B, ${choices[1]}; C, ${choices[2]}; D, ${choices[3]}. What's your answer?`;
-        
-    } catch (err) {
-      console.error("QuizIntent error:", err);
-      response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
-    }
+      
+      } catch (err) {
+        console.error("QuizIntent error:", err);
+        response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
+      }
+      
   } else if (intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
     const correct = session.attributes?.correctAnswer;
