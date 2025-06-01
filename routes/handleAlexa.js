@@ -31,7 +31,10 @@ router.post("/", async (req, res) => {
       try {
         const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
         const quizList = await quizRes.json();
-        const quiz = Array.isArray(quizList) ? quizList[0] : quizList;
+        const quiz = Array.isArray(quizList)
+          ? quizList[Math.floor(Math.random() * quizList.length)]
+          : quizList;
+        
   
         if (!quiz || !quiz.answer || !quiz.choices) {
           throw new Error("Incomplete quiz data from API.");
