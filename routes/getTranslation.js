@@ -11,7 +11,24 @@ const openai = new OpenAI({
 });
 
 router.post("/", async (req, res) => {
-  const { text } = req.body;
+  const { word, translation } = req.body;
+
+  if (!word || !translation) {
+    return res.status(400).json({ error: "Missing word or translation" });
+  }
+
+  const prompt = `
+Aku nak buat soalan kuiz Bahasa Inggeris untuk pelajar.
+
+Perkataan: "${word}"
+Maksud: "${translation}"
+
+Tolong bagi dalam format JSON:
+{
+  "answer": "Jawapan betul",
+  "choices": ["Jawapan betul", "Salah1", "Salah2", "Salah3"]
+}
+`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -19,21 +36,24 @@ router.post("/", async (req, res) => {
       messages: [
         {
           role: "user",
-          content: `Please translate the following text to Bahasa Malaysia, keeping the response under 20 words. If there are multiple meanings, list them numerically as shown below:
-            1. Meaning 1
-            2. Meaning 2
-            3. Meaning 3
-            Translate: ${text}`,
+          content: prompt,
         },
       ],
       stream: false,
     });
 
-    const messageContent = response.choices[0].message.content;
-    return res.json({ result: messageContent });
-  } catch (error) {
-    console.error("Error fetching translation:", error);
-    return res.status(500).json({ error: "Translation failed." });
+    const text = response.choices[0].message.content;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      return res.status(400).json({ error: "Failed to parse response" });
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return res.json(parsed);
+  } catch (err) {
+    console.error("Error generating choices:", err);
+    return res.status(500).json({ error: "Failed to generate choices" });
   }
 });
 
