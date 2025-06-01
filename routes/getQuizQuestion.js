@@ -21,25 +21,23 @@ console.log("SUPABASE_SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY)
 router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
-    .from("vocab")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1); // remove .not("answer", ...) dulu
-  
+      .from("vocab")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error || !data || data.length === 0) {
       return res.status(404).json({ error: "No vocab found" });
     }
 
-    const vocab = data[0];
-
-    return res.json({
+    const questions = data.map(vocab => ({
       word: vocab.word,
       question: `What is the meaning of "${vocab.word}"?`,
       choices: vocab.choices,
       answer: vocab.answer,
       sentence: vocab.sentence,
-    });
+    }));
+
+    return res.json(questions);
   } catch (err) {
     console.error("getQuizQuestion error:", err);
     return res.status(500).json({ error: "Server error" });
