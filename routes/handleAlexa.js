@@ -5,13 +5,11 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   const intentName = req.body.request?.intent?.name;
-  const session = req.body.session || {};
-  const sessionAttributes = session.attributes || {}; // Backup session state
+  const sessionAttributes = req.body.session?.attributes ?? {};
 
-  // ✅ Basic response structure ikut Alexa spec
   const response = {
     version: "1.0",
-    sessionAttributes: {}, // ✅ Mesti kat sini, bukan dalam `response`
+    sessionAttributes: { ...sessionAttributes }, // ✅ make sure defined
     response: {
       shouldEndSession: false,
       outputSpeech: {
@@ -21,30 +19,25 @@ router.post("/", async (req, res) => {
     },
   };
 
-  // ✅ Handle "start quiz"
   if (intentName === "QuizIntent") {
     try {
       const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
       const quiz = await quizRes.json();
 
-      if (!quiz?.question || !quiz?.choices || !quiz?.answer) {
-        throw new Error("Incomplete quiz data");
+      if (!quiz || !quiz.answer || !quiz.choices) {
+        throw new Error("Invalid quiz data");
       }
 
-      // ✅ Simpan jawapan ke session
       response.sessionAttributes.correctAnswer = quiz.answer;
 
-      // ✅ Bentuk soalan & pilihan jawapan
-      response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
+      response.response.outputSpeech.text = `${quiz.question}. Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
     } catch (err) {
       console.error("QuizIntent error:", err);
       response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
     }
-
-  // ✅ Handle "user jawab"
   } else if (intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
-    const correct = sessionAttributes?.correctAnswer;
+    const correct = sessionAttributes.correctAnswer;
 
     if (!correct) {
       response.response.outputSpeech.text = "Please start a quiz first by saying 'start quiz'.";
@@ -54,9 +47,8 @@ router.post("/", async (req, res) => {
       response.response.outputSpeech.text = `Oops, the correct answer is ${correct}. Try another question by saying 'start quiz'.`;
     }
 
+    // Clear session answer lepas jawab
     response.sessionAttributes.correctAnswer = null;
-
-  // ❌ Fallback (intent tak kenal)
   } else {
     response.response.outputSpeech.text = "Sorry, I didn't understand that. Try saying 'start quiz'.";
   }
