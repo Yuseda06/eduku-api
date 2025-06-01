@@ -20,17 +20,26 @@ router.post("/", async (req, res) => {
   };
 
   if (intentName === "QuizIntent") {
+
+    console.log("📦 Quiz response dari API:", quiz);
+
     try {
-      const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
-      const quiz = await quizRes.json();
-
-      if (!quiz || !quiz.answer || !quiz.choices) {
-        throw new Error("Incomplete quiz data from API.");
-      }
-
-      response.sessionAttributes.correctAnswer = quiz.answer;
-
-      response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
+        const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
+        const quiz = await quizRes.json();
+        
+        if (!quiz || !quiz.answer || !quiz.choices) {
+          throw new Error("Incomplete quiz data from API.");
+        }
+        
+        // Handle jika choices dalam bentuk string
+        const choices = Array.isArray(quiz.choices)
+          ? quiz.choices
+          : JSON.parse(quiz.choices);
+        
+        response.sessionAttributes.correctAnswer = quiz.answer;
+        
+        response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${choices[0]}; B, ${choices[1]}; C, ${choices[2]}; D, ${choices[3]}. What's your answer?`;
+        
     } catch (err) {
       console.error("QuizIntent error:", err);
       response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
