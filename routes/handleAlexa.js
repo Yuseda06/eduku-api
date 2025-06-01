@@ -21,7 +21,7 @@ router.post("/", async (req, res) => {
 
   if (intentName === "QuizIntent") {
 
-    console.log("📦 Quiz response dari API:", quiz);
+  
 
     try {
         // const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
@@ -33,6 +33,8 @@ router.post("/", async (req, res) => {
             answer: "Run",
             sentence: "She likes to run in the park every morning.",
           };
+
+          console.log("📦 Quiz response dari API:", quiz);
         
         if (!quiz || !quiz.answer || !quiz.choices) {
           throw new Error("Incomplete quiz data from API.");
