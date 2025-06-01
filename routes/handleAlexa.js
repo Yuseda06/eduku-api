@@ -1,4 +1,5 @@
 import express from "express";
+import fetch from "node-fetch";
 
 const router = express.Router();
 
@@ -19,17 +20,21 @@ router.post("/", async (req, res) => {
   };
 
   if (intentName === "QuizIntent") {
-    // ❗ Guna dummy data terus
-    const quiz = {
-      question: "What is the meaning of 'Lari'?",
-      choices: ["Run", "Eat", "Sleep", "Jump"],
-      answer: "Run",
-      sentence: "She likes to run in the park every morning.",
-    };
-    response.sessionAttributes = response.sessionAttributes || {};
-    response.sessionAttributes.correctAnswer = quiz.answer;
-    
-    response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
+    try {
+      const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
+      const quiz = await quizRes.json();
+
+      if (!quiz || !quiz.answer || !quiz.choices) {
+        throw new Error("Incomplete quiz data from API.");
+      }
+
+      response.sessionAttributes.correctAnswer = quiz.answer;
+
+      response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
+    } catch (err) {
+      console.error("QuizIntent error:", err);
+      response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
+    }
   } else if (intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
     const correct = session.attributes?.correctAnswer;
@@ -51,7 +56,7 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", (req, res) => {
-  res.status(200).send("Alexa webhook dummy is up.");
+  res.status(200).send("Alexa webhook is up and running.");
 });
 
 export default router;
