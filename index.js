@@ -9,6 +9,7 @@ import generateImageRoute from "./routes/generateImage.js";
 import ttsRoute from "./routes/tts.js";
 import pronounceRoute from "./routes/pronounce.js";
 import getChoicesRoute from "./routes/getChoices.js";
+import getQuizQuestionRoute from "./routes/getQuizQuestion.js";
 dotenv.config();
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/generateImage", generateImageRoute);
 app.use("/api/tts", ttsRoute);
 app.use("/api/pronounce", pronounceRoute);
 app.use("/api/getChoices", getChoicesRoute);
+app.use("/api/getQuizQuestion", getQuizQuestionRoute);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

@@ -1,0 +1,43 @@
+import express from "express";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const router = express.Router();
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+router.get("/", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("vocab")
+      .select("*")
+      .not("answer", "is", null)
+      .not("choices", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1); // tukar ke `random()` kalau nak betul-betul rawak
+
+    if (error || !data || data.length === 0) {
+      return res.status(404).json({ error: "No vocab found" });
+    }
+
+    const vocab = data[0];
+
+    return res.json({
+      word: vocab.word,
+      question: `What is the meaning of "${vocab.word}"?`,
+      choices: vocab.choices,
+      answer: vocab.answer,
+      sentence: vocab.sentence,
+    });
+  } catch (err) {
+    console.error("getQuizQuestion error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+export default router;
