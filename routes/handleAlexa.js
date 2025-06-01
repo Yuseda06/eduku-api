@@ -26,8 +26,9 @@ router.post("/", async (req, res) => {
       answer: "Run",
       sentence: "She likes to run in the park every morning.",
     };
-
+    response.sessionAttributes = response.sessionAttributes || {};
     response.sessionAttributes.correctAnswer = quiz.answer;
+    
     response.response.outputSpeech.text = `${quiz.question} Your options are: A, ${quiz.choices[0]}; B, ${quiz.choices[1]}; C, ${quiz.choices[2]}; D, ${quiz.choices[3]}. What's your answer?`;
   } else if (intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
