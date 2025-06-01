@@ -26,6 +26,7 @@ router.post("/", async (req, res) => {
     try {
         const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
         const quiz = await quizRes.json();
+        console.log("🧪 Quiz Data Debug:", JSON.stringify(quiz, null, 2));
 
         
         if (!quiz || !quiz.answer || !quiz.choices) {
