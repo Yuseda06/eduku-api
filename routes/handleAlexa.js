@@ -24,17 +24,9 @@ router.post("/", async (req, res) => {
   
 
     try {
-        // const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
-        // const quiz = await quizRes.json();
+        const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
+        const quiz = await quizRes.json();
 
-        const quiz = {
-            question: "What is the meaning of 'Lari'?",
-            choices: ["Run", "Eat", "Sleep", "Jump"],
-            answer: "Run",
-            sentence: "She likes to run in the park every morning.",
-          };
-
-          console.log("📦 Quiz response dari API:", quiz);
         
         if (!quiz || !quiz.answer || !quiz.choices) {
           throw new Error("Incomplete quiz data from API.");
