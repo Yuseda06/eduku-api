@@ -10,12 +10,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-router.post("/score", async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("scores")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from("alexa_score")
+      .select("child_id, score");
 
     if (error || !data) {
       console.error("Supabase error:", error);
@@ -31,9 +30,16 @@ router.post("/score", async (req, res) => {
       });
     }
 
-    const irfan = data.find(d => d.child === "irfan")?.score ?? 0;
-    const naufal = data.find(d => d.child === "naufal")?.score ?? 0;
-    const zakwan = data.find(d => d.child === "zakwan")?.score ?? 0;
+    // Group and sum
+    const scores = data.reduce((acc, row) => {
+      const name = row.child_id?.toLowerCase();
+      acc[name] = (acc[name] || 0) + (row.score ?? 0);
+      return acc;
+    }, {});
+
+    const irfan = scores["irfan"] ?? 0;
+    const naufal = scores["naufal"] ?? 0;
+    const zakwan = scores["zakwan"] ?? 0;
 
     const text = `Irfan has ${irfan} points. Naufal has ${naufal}. Zakwan has ${zakwan} points.`;
 
