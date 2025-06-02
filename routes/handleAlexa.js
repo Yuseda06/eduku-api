@@ -98,20 +98,24 @@ router.post("/", async (req, res) => {
     return res.json(response);
   }
 
-  // 4. AnswerIntent
+  // 4. Answering
   if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
     const correctLetter = sessionAttr.correctLetter;
-    const correctAnswer = sessionAttr.correctAnswer;
+    const choices = sessionAttr.choices;
     const childId = sessionAttr.childId;
 
-    if (!correctLetter || !childId) {
-      response.response.outputSpeech.text = "Please start a quiz first.";
+    if (!correctLetter || !childId || !choices) {
+      response.response.outputSpeech.text = "Please select a child and start a quiz first.";
     } else {
       const userLetter = userAnswer?.toLowerCase();
       const correct = correctLetter.toLowerCase();
 
-      if (userLetter === correct) {
+      const index = ['a', 'b', 'c', 'd'].indexOf(userLetter);
+      const selectedAnswer = (choices?.[index] || "").toLowerCase().trim();
+      const correctAnswer = (sessionAttr.correctAnswer || "").toLowerCase().trim();
+
+      if (selectedAnswer === correctAnswer) {
         response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
         try {
           await supabase.from("alexa_score").insert([
@@ -122,19 +126,19 @@ router.post("/", async (req, res) => {
             },
           ]);
         } catch (e) {
-          console.error("Supabase insert error:", e);
+          console.error("Failed to insert score:", e);
         }
       } else {
-        response.response.outputSpeech.text = `Oops, the correct answer is ${correctAnswer}. Try another question by saying 'start quiz'.`;
+        response.response.outputSpeech.text = `Oops, the correct answer is ${sessionAttr.correctAnswer}. Try another question by saying 'start quiz'.`;
       }
     }
 
-    // Clear session after answer
     response.sessionAttributes.correctLetter = null;
     response.sessionAttributes.correctAnswer = null;
     response.sessionAttributes.choices = null;
     return res.json(response);
   }
+
 
   // 5. Fallback
   response.response.outputSpeech.text = "Sorry, I didn't understand that. Try saying 'start quiz'.";
