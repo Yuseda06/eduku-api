@@ -19,7 +19,7 @@ router.post("/", async (req, res) => {
       messages: [
         {
           role: "user",
-          content: `Please translate the following text to Bahasa Malaysia and change the word to root word, keeping the response under 20 words. If there are multiple meanings, list them numerically as shown below:
+          content: `Please translate the following text to Bahasa Malaysia, keeping the response under 20 words. If there are multiple meanings, list them numerically as shown below:
             1. Meaning 1
             2. Meaning 2
             3. Meaning 3
