@@ -12,6 +12,7 @@ import getChoicesRoute from "./routes/getChoices.js";
 import getQuizQuestionRoute from "./routes/getQuizQuestion.js";
 import handleAlexaRoute from "./routes/handleAlexa.js";
 import getAlexaScoresRoute from "./routes/getAlexaScores.js";
+import getAlexaAnnounceScoresRoute from "./routes/getAlexaAnnounceScores.js";
 dotenv.config();
 
 const app = express();
@@ -47,6 +48,7 @@ app.use("/api/getChoices", getChoicesRoute);
 app.use("/api/getQuizQuestion", getQuizQuestionRoute);
 app.use("/api/handleAlexa", handleAlexaRoute);
 app.use("/api/getAlexaScores", getAlexaScoresRoute);
+app.use("/api/getAlexaAnnounceScores", getAlexaAnnounceScoresRoute);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
