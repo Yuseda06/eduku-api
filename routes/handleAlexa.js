@@ -11,6 +11,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Helper untuk shuffle pilihan
 function shuffle(array) {
   return array
     .map(value => ({ value, sort: Math.random() }))
@@ -21,8 +22,7 @@ function shuffle(array) {
 router.post("/", async (req, res) => {
   const requestType = req.body.request?.type;
   const intentName = req.body.request?.intent?.name;
-  const session = req.body.session || {};
-  const sessionAttr = session.attributes || {};
+  const sessionAttr = req.body.session?.attributes ?? {}; // FIXED here ✔️
 
   const response = {
     version: "1.0",
@@ -36,11 +36,11 @@ router.post("/", async (req, res) => {
     sessionAttributes: { ...sessionAttr },
   };
 
-  // 1. Handle Select Child
+  // 1. SelectChildIntent (guna child_number mapped to id)
   if (intentName === "SelectChildIntent") {
     const selectedChild =
       req.body.request.intent?.slots?.child_number?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.id;
-  
+
     if (selectedChild) {
       response.sessionAttributes.childId = selectedChild;
       response.response.outputSpeech.text = `Alright! I've set the quiz for ${selectedChild}. Say 'start quiz' to begin.`;
@@ -49,60 +49,64 @@ router.post("/", async (req, res) => {
     }
     return res.json(response);
   }
-  
-  
 
-  // 2. Welcome Launch
+  // 2. LaunchRequest
   if (requestType === "LaunchRequest") {
     response.response.outputSpeech.text = "Welcome to Eduku Vocab! Say 'start quiz' to begin.";
     return res.json(response);
   }
 
-  // 3. Start Quiz
+  // 3. QuizIntent
   if (requestType === "IntentRequest" && intentName === "QuizIntent") {
-    if (!sessionAttr.childId) {
-      response.response.outputSpeech.text = "Please select a child and start a quiz first.";
+    const childId = sessionAttr.childId;
+
+    if (!childId) {
+      response.response.outputSpeech.text = "Please select a child first by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
       return res.json(response);
     }
-    try {
-      const quizRes = await fetch(`https://eduku-api.vercel.app/api/getQuizQuestion?child=${sessionAttr.childId}`);
-      const quizList = await quizRes.json();
-      const quiz = Array.isArray(quizList)
-        ? quizList[Math.floor(Math.random() * quizList.length)]
-        : quizList;
 
-      const choices = Array.isArray(quiz.choices) ? quiz.choices : JSON.parse(quiz.choices);
-      const shuffledChoices = shuffle(choices);
-      const spelling = quiz.word.split('').join('-').toUpperCase();
+    try {
+      const quizRes = await fetch(`https://eduku-api.vercel.app/api/getQuizQuestion?child=${childId}`);
+      const quizData = await quizRes.json();
+
+      if (!quizData || !quizData.answer || !quizData.choices) {
+        throw new Error("Invalid quiz format");
+      }
+
+      const shuffledChoices = shuffle(quizData.choices);
+      const spelling = quizData.word.split('').join('-').toUpperCase();
 
       const correctIndex = shuffledChoices.findIndex(
-        choice => choice.toLowerCase() === quiz.answer.toLowerCase()
+        choice => choice.toLowerCase() === quizData.answer.toLowerCase()
       );
       const answerLetters = ['A', 'B', 'C', 'D'];
       const correctLetter = answerLetters[correctIndex];
 
       response.sessionAttributes.correctLetter = correctLetter;
+      response.sessionAttributes.correctAnswer = quizData.answer;
       response.sessionAttributes.choices = shuffledChoices;
-      response.sessionAttributes.correctAnswer = quiz.answer;
 
       response.response.outputSpeech.text =
-        `Spell this word: ${spelling}. ${quiz.question} Your options are: ` +
+        `Spell this word: ${spelling}. ${quizData.question} Your options are: ` +
         `A, ${shuffledChoices[0]}; B, ${shuffledChoices[1]}; C, ${shuffledChoices[2]}; D, ${shuffledChoices[3]}. What's your answer?`;
+
     } catch (err) {
       console.error("QuizIntent error:", err);
       response.response.outputSpeech.text = "Sorry, I couldn't load the question. Please try again later.";
     }
+
     return res.json(response);
   }
 
-  // 4. Answering
+  // 4. AnswerIntent
   if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
     const userAnswer = req.body.request.intent?.slots?.option?.value;
     const correctLetter = sessionAttr.correctLetter;
+    const correctAnswer = sessionAttr.correctAnswer;
     const childId = sessionAttr.childId;
 
     if (!correctLetter || !childId) {
-      response.response.outputSpeech.text = "Please select a child and start a quiz first.";
+      response.response.outputSpeech.text = "Please start a quiz first.";
     } else {
       const userLetter = userAnswer?.toLowerCase();
       const correct = correctLetter.toLowerCase();
@@ -118,13 +122,14 @@ router.post("/", async (req, res) => {
             },
           ]);
         } catch (e) {
-          console.error("Failed to insert score:", e);
+          console.error("Supabase insert error:", e);
         }
       } else {
-        response.response.outputSpeech.text = `Oops, the correct answer is ${sessionAttr.correctAnswer}. Try another question by saying 'start quiz'.`;
+        response.response.outputSpeech.text = `Oops, the correct answer is ${correctAnswer}. Try another question by saying 'start quiz'.`;
       }
     }
 
+    // Clear session after answer
     response.sessionAttributes.correctLetter = null;
     response.sessionAttributes.correctAnswer = null;
     response.sessionAttributes.choices = null;
