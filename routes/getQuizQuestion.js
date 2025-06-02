@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Shuffle helper
+// Helper untuk shuffle array
 function shuffle(array) {
   return array
     .map(value => ({ value, sort: Math.random() }))
@@ -19,24 +19,30 @@ function shuffle(array) {
 }
 
 router.get("/", async (req, res) => {
-  const child = req.query.child;
+  const child = req.query.child?.toLowerCase();
 
   if (!child) {
-    return res.status(400).json({ error: "Missing child query parameter" });
+    return res.status(400).json({ error: "Missing 'child' query parameter" });
   }
 
   try {
     const { data, error } = await supabase
       .from("vocab")
-      .select("*")
-      .eq("user_id", child); // guna user_id untuk filter ikut child
+      .select("word, answer, choices, sentence")
+      .eq("user_id", child);
 
-    if (error || !data || data.length === 0) {
-      return res.status(404).json({ error: "No vocab found for this child" });
+    if (error) {
+      console.error("Supabase error:", error);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: `No vocab found for child '${child}'` });
     }
 
     const vocab = data[Math.floor(Math.random() * data.length)];
-    const shuffledChoices = shuffle(vocab.choices);
+    const choices = Array.isArray(vocab.choices) ? vocab.choices : JSON.parse(vocab.choices);
+    const shuffledChoices = shuffle(choices);
 
     return res.json({
       word: vocab.word,
@@ -46,8 +52,8 @@ router.get("/", async (req, res) => {
       sentence: vocab.sentence,
     });
   } catch (err) {
-    console.error("Error fetching vocab:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Unexpected server error" });
   }
 });
 

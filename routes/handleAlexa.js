@@ -65,7 +65,7 @@ router.post("/", async (req, res) => {
       return res.json(response);
     }
     try {
-      const quizRes = await fetch(`https://eduku-api.vercel.app/api/getQuizQuestion?child=${childId}`);
+      const quizRes = await fetch(`https://eduku-api.vercel.app/api/getQuizQuestion?child=${sessionAttr.childId}`);
       const quizList = await quizRes.json();
       const quiz = Array.isArray(quizList)
         ? quizList[Math.floor(Math.random() * quizList.length)]
