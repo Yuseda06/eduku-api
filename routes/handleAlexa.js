@@ -38,16 +38,19 @@ router.post("/", async (req, res) => {
 
   // 1. Handle Select Child
   if (intentName === "SelectChildIntent") {
-    const selectedChild = req.body.request.intent?.slots?.child?.value?.toLowerCase();
-    const validChildren = ["irfan", "naufal", "zakwan"];
-    if (validChildren.includes(selectedChild)) {
+    const selectedChild =
+      req.body.request.intent?.slots?.child_number?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.id;
+  
+    if (selectedChild) {
       response.sessionAttributes.childId = selectedChild;
-      response.response.outputSpeech.text = `Okay, I've set this quiz for ${selectedChild}. Say start quiz to begin.`;
+      response.response.outputSpeech.text = `Alright! I've set the quiz for ${selectedChild}. Say 'start quiz' to begin.`;
     } else {
-      response.response.outputSpeech.text = "Sorry, I didn't recognize that name. Please say Irfan, Naufal, or Zakwan.";
+      response.response.outputSpeech.text = "Sorry, I didn't get the number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
     }
     return res.json(response);
   }
+  
+  
 
   // 2. Welcome Launch
   if (requestType === "LaunchRequest") {
@@ -62,7 +65,7 @@ router.post("/", async (req, res) => {
       return res.json(response);
     }
     try {
-      const quizRes = await fetch("https://eduku-api.vercel.app/api/getQuizQuestion");
+      const quizRes = await fetch(`https://eduku-api.vercel.app/api/getQuizQuestion?child=${childId}`);
       const quizList = await quizRes.json();
       const quiz = Array.isArray(quizList)
         ? quizList[Math.floor(Math.random() * quizList.length)]
