@@ -18,6 +18,21 @@ function shuffle(array) {
     .map(({ value }) => value);
 }
 
+// childId to actual UUID mapping
+const CHILD_UUID_MAP = {
+  irfan: "aeffb8fa-547a-4c5e-8cf0-2a491816532e",
+  naufal: "3e4c5b1d-ccfb-4e93-8de2-c75c30e4642d",
+  zakwan: "e56a7fe1-0181-4293-a566-84cd07a384c6",
+};
+
+const child = req.query.child?.toLowerCase();
+const uuid = CHILD_UUID_MAP[child];
+
+if (!uuid) {
+  return res.status(400).json({ error: "Invalid child name" });
+}
+
+
 router.get("/", async (req, res) => {
   const child = req.query.child?.toLowerCase();
 
@@ -29,7 +44,7 @@ router.get("/", async (req, res) => {
     const { data, error } = await supabase
       .from("vocab")
       .select("word, answer, choices, sentence")
-      .eq("user_id", child);
+      .eq("user_id", uuid);
 
     if (error) {
       console.error("Supabase error:", error);
