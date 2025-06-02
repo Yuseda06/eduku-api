@@ -47,16 +47,21 @@ router.post("/", async (req, res) => {
       { name: "Zakwan", score: zakwan }
     ];
     
-    // ✅ FIX: guna first item sebagai base, tak perlu {}
-    const highest = allScores.reduce((a, b) => (b.score > a.score ? b : a));
+    // ✅ Sort desc
+    const sorted = allScores.sort((a, b) => b.score - a.score);
+    const [first, second, third] = sorted;
     
     const ssml = `<speak>
       <amazon:emotion name="excited" intensity="high">
-        Yuhuuuu! ${highest.name} is the highest scorer with ${highest.score} points!
+        Yuhuuuu! ${first.name} is the highest scorer with ${first.score} points!
       </amazon:emotion>
       <break time="0.5s"/>
-      Keep it up ${highest.name}! You're doing awesome!
+      Followed by ${second.name} with ${second.score} ${second.score === 1 ? "point" : "points"},
+      and ${third.name} with ${third.score} ${third.score === 1 ? "point" : "points"}.
+      <break time="0.4s"/>
+      Keep it up everyone!
     </speak>`;
+    
     
   
   return res.json({
