@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Group and sum
+    // Group & sum
     const scores = data.reduce((acc, row) => {
       const name = row.child_id?.toLowerCase();
       acc[name] = (acc[name] || 0) + (row.score ?? 0);
@@ -41,18 +41,33 @@ router.post("/", async (req, res) => {
     const naufal = scores["naufal"] ?? 0;
     const zakwan = scores["zakwan"] ?? 0;
 
-    const text = `Irfan has ${irfan} points. Naufal has ${naufal}. Zakwan has ${zakwan} points.`;
+    const allScores = [
+      { name: "Irfan", score: irfan },
+      { name: "Naufal", score: naufal },
+      { name: "Zakwan", score: zakwan }
+    ];
 
-    return res.json({
-      version: "1.0",
-      response: {
-        outputSpeech: {
-          type: "PlainText",
-          text
-        },
-        shouldEndSession: true
-      }
-    });
+    // Cari siapa paling tinggi
+    const highest = allScores.reduce((a, b) => (b.score > a.score ? b : a), {});
+
+    const ssml = `<speak>
+    <amazon:emotion name="excited" intensity="high">
+      Yuhuuuu! ${highest.name} is the highest scorer with ${highest.score} points!
+    </amazon:emotion>
+      <break time="0.5s"/>
+      Keep it up ${highest.name}! You're doing awesome!
+  </speak>`;
+  
+  return res.json({
+    version: "1.0",
+    response: {
+      outputSpeech: {
+        type: "SSML",
+        ssml
+      },
+      shouldEndSession: true
+    }
+  });
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({
