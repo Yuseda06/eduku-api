@@ -107,9 +107,9 @@ router.post("/", async (req, res) => {
       if (userLetter === correct) {
         response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
         try {
-          await supabase.from("score").insert([
+          await supabase.from("alexa_score").insert([
             {
-              user_id: childId,
+              child_id: childId,
               score: 1,
               section: "vocab",
             },
