@@ -1,4 +1,3 @@
-
 import express from "express";
 import fetch from "node-fetch";
 import { createClient } from "@supabase/supabase-js";
@@ -74,12 +73,14 @@ router.post("/", async (req, res) => {
       const spelling = quiz.word.split('').join('-').toUpperCase();
 
       const correctIndex = shuffledChoices.findIndex(
-        c => c.toLowerCase() === quiz.answer.toLowerCase()
+        choice => choice.toLowerCase() === quiz.answer.toLowerCase()
       );
-      const correctLetter = ["A", "B", "C", "D"][correctIndex];
+      const answerLetters = ['A', 'B', 'C', 'D'];
+      const correctLetter = answerLetters[correctIndex];
 
-      response.sessionAttributes.correctAnswer = correctLetter;
+      response.sessionAttributes.correctLetter = correctLetter;
       response.sessionAttributes.choices = shuffledChoices;
+      response.sessionAttributes.correctAnswer = quiz.answer;
 
       response.response.outputSpeech.text =
         `Spell this word: ${spelling}. ${quiz.question} Your options are: ` +
@@ -93,15 +94,17 @@ router.post("/", async (req, res) => {
 
   // 4. Answering
   if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
-    const userAnswer = req.body.request.intent?.slots?.option?.value?.toUpperCase();
-    const correctOption = sessionAttr.correctAnswer;
-    const choices = sessionAttr.choices;
+    const userAnswer = req.body.request.intent?.slots?.option?.value;
+    const correctLetter = sessionAttr.correctLetter;
     const childId = sessionAttr.childId;
 
-    if (!correctOption || !choices || !childId) {
+    if (!correctLetter || !childId) {
       response.response.outputSpeech.text = "Please select a child and start a quiz first.";
     } else {
-      if (userAnswer === correctOption) {
+      const userLetter = userAnswer?.toLowerCase();
+      const correct = correctLetter.toLowerCase();
+
+      if (userLetter === correct) {
         response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
         try {
           await supabase.from("score").insert([
@@ -115,11 +118,11 @@ router.post("/", async (req, res) => {
           console.error("Failed to insert score:", e);
         }
       } else {
-        const correctText = choices[["A", "B", "C", "D"].indexOf(correctOption)];
-        response.response.outputSpeech.text = `Oops, the correct answer is ${correctText}. Try another question by saying 'start quiz'.`;
+        response.response.outputSpeech.text = `Oops, the correct answer is ${sessionAttr.correctAnswer}. Try another question by saying 'start quiz'.`;
       }
     }
 
+    response.sessionAttributes.correctLetter = null;
     response.sessionAttributes.correctAnswer = null;
     response.sessionAttributes.choices = null;
     return res.json(response);
