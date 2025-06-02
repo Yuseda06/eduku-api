@@ -1,3 +1,4 @@
+
 import express from "express";
 import fetch from "node-fetch";
 import { createClient } from "@supabase/supabase-js";
@@ -72,7 +73,12 @@ router.post("/", async (req, res) => {
       const shuffledChoices = shuffle(choices);
       const spelling = quiz.word.split('').join('-').toUpperCase();
 
-      response.sessionAttributes.correctAnswer = quiz.answer;
+      const correctIndex = shuffledChoices.findIndex(
+        c => c.toLowerCase() === quiz.answer.toLowerCase()
+      );
+      const correctLetter = ["A", "B", "C", "D"][correctIndex];
+
+      response.sessionAttributes.correctAnswer = correctLetter;
       response.sessionAttributes.choices = shuffledChoices;
 
       response.response.outputSpeech.text =
@@ -87,19 +93,15 @@ router.post("/", async (req, res) => {
 
   // 4. Answering
   if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
-    const userAnswer = req.body.request.intent?.slots?.option?.value;
-    const correct = sessionAttr.correctAnswer;
+    const userAnswer = req.body.request.intent?.slots?.option?.value?.toUpperCase();
+    const correctOption = sessionAttr.correctAnswer;
     const choices = sessionAttr.choices;
     const childId = sessionAttr.childId;
 
-    if (!correct || !choices || !childId) {
+    if (!correctOption || !choices || !childId) {
       response.response.outputSpeech.text = "Please select a child and start a quiz first.";
     } else {
-      const optionMap = { a: 0, b: 1, c: 2, d: 3 };
-      const index = optionMap[userAnswer?.toLowerCase()];
-      const chosenAnswer = choices[index];
-
-      if (chosenAnswer?.toLowerCase() === correct.toLowerCase()) {
+      if (userAnswer === correctOption) {
         response.response.outputSpeech.text = "Correct! You earned 1 point. Say 'start quiz' for another question.";
         try {
           await supabase.from("score").insert([
@@ -113,7 +115,8 @@ router.post("/", async (req, res) => {
           console.error("Failed to insert score:", e);
         }
       } else {
-        response.response.outputSpeech.text = `Oops, the correct answer is ${correct}. Try another question by saying 'start quiz'.`;
+        const correctText = choices[["A", "B", "C", "D"].indexOf(correctOption)];
+        response.response.outputSpeech.text = `Oops, the correct answer is ${correctText}. Try another question by saying 'start quiz'.`;
       }
     }
 
