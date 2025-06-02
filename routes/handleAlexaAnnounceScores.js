@@ -46,17 +46,18 @@ router.post("/", async (req, res) => {
       { name: "Naufal", score: naufal },
       { name: "Zakwan", score: zakwan }
     ];
-
-    // Cari siapa paling tinggi
-    const highest = allScores.reduce((a, b) => (b.score > a.score ? b : a), {});
-
+    
+    // ✅ FIX: guna first item sebagai base, tak perlu {}
+    const highest = allScores.reduce((a, b) => (b.score > a.score ? b : a));
+    
     const ssml = `<speak>
-    <amazon:emotion name="excited" intensity="high">
-      Yuhuuuu! ${highest.name} is the highest scorer with ${highest.score} points!
-    </amazon:emotion>
+      <amazon:emotion name="excited" intensity="high">
+        Yuhuuuu! ${highest.name} is the highest scorer with ${highest.score} points!
+      </amazon:emotion>
       <break time="0.5s"/>
       Keep it up ${highest.name}! You're doing awesome!
-  </speak>`;
+    </speak>`;
+    
   
   return res.json({
     version: "1.0",
