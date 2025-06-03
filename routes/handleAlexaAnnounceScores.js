@@ -30,50 +30,76 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Group & sum
+    // Kira total markah setiap anak
     const scores = data.reduce((acc, row) => {
       const name = row.child_id?.toLowerCase();
       acc[name] = (acc[name] || 0) + (row.score ?? 0);
       return acc;
     }, {});
 
-    const irfan = scores["irfan"] ?? 0;
-    const naufal = scores["naufal"] ?? 0;
-    const zakwan = scores["zakwan"] ?? 0;
-
     const allScores = [
-      { name: "Irfan", score: irfan },
-      { name: "Naufal", score: naufal },
-      { name: "Zakwan", score: zakwan }
+      { name: "Irfan", score: scores["irfan"] ?? 0 },
+      { name: "Naufal", score: scores["naufal"] ?? 0 },
+      { name: "Zakwan", score: scores["zakwan"] ?? 0 }
     ];
-    
-    // ✅ Sort desc
+
+    // Sort desc
     const sorted = allScores.sort((a, b) => b.score - a.score);
     const [first, second, third] = sorted;
-    
-    const ssml = `<speak>
-      <amazon:emotion name="excited" intensity="high">
-        Yuhuuuu! ${first.name} is the highest scorer with ${first.score} points!
-      </amazon:emotion>
-      <break time="0.5s"/>
-      Followed by ${second.name} with ${second.score} ${second.score === 1 ? "point" : "points"},
-      and ${third.name} with ${third.score} ${third.score === 1 ? "point" : "points"}.
-      <break time="0.4s"/>
-      Keep it up everyone!
-    </speak>`;
-    
-    
-  
-  return res.json({
-    version: "1.0",
-    response: {
-      outputSpeech: {
-        type: "SSML",
-        ssml
-      },
-      shouldEndSession: true
-    }
-  });
+
+    // Random SSML messages
+    const templates = [
+      `<speak>
+        <amazon:emotion name="excited" intensity="high">
+          Woohoo! ${first.name} is on fire with ${first.score} points!
+        </amazon:emotion>
+        <break time="0.5s"/>
+        ${second.name} has ${second.score}, ${third.name} not far with ${third.score}.
+      </speak>`,
+
+      `<speak>
+        Big congrats to ${first.name} for scoring ${first.score} points!
+        <break time="0.3s"/>
+        ${second.name} and ${third.name}, you're catching up!
+      </speak>`,
+
+      `<speak>
+        <amazon:emotion name="excited" intensity="medium">
+          Heads up! ${first.name} leads with ${first.score} points.
+        </amazon:emotion>
+        ${second.name} and ${third.name} are close behind.
+      </speak>`,
+
+      `<speak>
+        The quiz battle is heating up!
+        <break time="0.3s"/>
+        ${first.name} is currently in the lead with ${first.score}.
+        ${second.name} and ${third.name}, can you beat that?
+      </speak>`,
+
+      `<speak>
+        <amazon:emotion name="excited" intensity="high">
+          It's ${first.name} at the top again!
+        </amazon:emotion>
+        ${second.name} has ${second.score}, ${third.name} got ${third.score}.
+        Great job everyone!
+      </speak>`
+    ];
+
+    const randomIndex = Math.floor(Math.random() * templates.length);
+    const ssml = templates[randomIndex];
+
+    return res.json({
+      version: "1.0",
+      response: {
+        outputSpeech: {
+          type: "SSML",
+          ssml
+        },
+        shouldEndSession: true
+      }
+    });
+
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({
