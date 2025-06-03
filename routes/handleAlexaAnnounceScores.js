@@ -30,7 +30,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Kira total markah setiap anak
     const scores = data.reduce((acc, row) => {
       const name = row.child_id?.toLowerCase();
       acc[name] = (acc[name] || 0) + (row.score ?? 0);
@@ -43,46 +42,52 @@ router.post("/", async (req, res) => {
       { name: "Zakwan", score: scores["zakwan"] ?? 0 }
     ];
 
-    // Sort desc
-    const sorted = allScores.sort((a, b) => b.score - a.score);
+    const sorted = [...allScores].sort((a, b) => b.score - a.score);
     const [first, second, third] = sorted;
 
-    // Random SSML messages
+    // Ayat untuk markah semua
+    const fullScoresText = `Irfan has ${scores["irfan"] ?? 0}, Naufal has ${scores["naufal"] ?? 0}, and Zakwan has ${scores["zakwan"] ?? 0} points.`;
+
+    // 5 random template
     const templates = [
       `<speak>
-        <amazon:emotion name="excited" intensity="high">
-          Woohoo! ${first.name} is on fire with ${first.score} points!
-        </amazon:emotion>
-        <break time="0.5s"/>
-        ${second.name} has ${second.score}, ${third.name} not far with ${third.score}.
-      </speak>`,
-
-      `<speak>
-        Big congrats to ${first.name} for scoring ${first.score} points!
-        <break time="0.3s"/>
-        ${second.name} and ${third.name}, you're catching up!
-      </speak>`,
-
-      `<speak>
-        <amazon:emotion name="excited" intensity="medium">
-          Heads up! ${first.name} leads with ${first.score} points.
-        </amazon:emotion>
-        ${second.name} and ${third.name} are close behind.
-      </speak>`,
-
-      `<speak>
-        The quiz battle is heating up!
+        <amazon:emotion name="excited" intensity="high">The quiz battle is heating up!</amazon:emotion>
         <break time="0.3s"/>
         ${first.name} is currently in the lead with ${first.score}.
         ${second.name} and ${third.name}, can you beat that?
+        <break time="0.4s"/>
+        ${fullScoresText}
       </speak>`,
 
       `<speak>
-        <amazon:emotion name="excited" intensity="high">
-          It's ${first.name} at the top again!
-        </amazon:emotion>
-        ${second.name} has ${second.score}, ${third.name} got ${third.score}.
-        Great job everyone!
+        <amazon:emotion name="excited" intensity="medium">Here's the latest score update!</amazon:emotion>
+        <break time="0.2s"/>
+        ${fullScoresText} 
+        <break time="0.3s"/> Keep it going!
+      </speak>`,
+
+      `<speak>
+        Oh wow! ${first.name} is crushing it with ${first.score} points!
+        <break time="0.3s"/>
+        But hey, ${second.name} and ${third.name} are still in the game.
+        <break time="0.3s"/>
+        ${fullScoresText}
+      </speak>`,
+
+      `<speak>
+        <amazon:emotion name="excited" intensity="low">It’s a close race!</amazon:emotion>
+        <break time="0.2s"/>
+        ${first.name} leads, but everyone’s doing great.
+        <break time="0.3s"/>
+        ${fullScoresText}
+      </speak>`,
+
+      `<speak>
+        Time for a score check!
+        <break time="0.3s"/>
+        ${fullScoresText}
+        <break time="0.3s"/>
+        Let's see who climbs to the top next!
       </speak>`
     ];
 
