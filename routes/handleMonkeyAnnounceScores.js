@@ -44,18 +44,19 @@ router.post("/", async (req, res) => {
 
     // Call VoiceMonkey v2 API
     const vmResponse = await axios.post(
-      "https://api.voicemonkey.io/v2/monkey/trigger",
+        "https://api.voicemonkey.io/v2/trigger",
       {
-        monkey: "quiz-score", // Monkey name (lowercase)
-        announcement,
-        device: "all" // or specify device if needed
+        trigger: "quiz-score", // match with Device ID from screenshot
+        announcement: announcement,
+        device: "all"
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.VM_API_TOKEN}`
         }
       }
-    );
+      );
+      
 
     return res.status(200).json({
       message: "VoiceMonkey announcement triggered",
