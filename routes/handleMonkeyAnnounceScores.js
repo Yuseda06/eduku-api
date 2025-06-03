@@ -42,7 +42,6 @@ router.post("/", async (req, res) => {
         <break time="400ms"/> You all are doing amazing, I’m super proud of your effort.
         Let's see who can top the chart next!
       </speak>`,
-
       `<speak>
         Hey hey hey! Here’s your quiz leaderboard update!
         ${first.name} leads the game with ${first.score} points.
@@ -50,7 +49,6 @@ router.post("/", async (req, res) => {
         ${third.name} is still in the game with ${third.score} points.
         Keep pushing and don’t stop now!
       </speak>`,
-
       `<speak>
         Alright quiz warriors! <emphasis level="moderate">${first.name}</emphasis> is smashing it with ${first.score} points!
         ${second.name} is giving a good fight with ${second.score}.
@@ -58,7 +56,6 @@ router.post("/", async (req, res) => {
         <break time="300ms"/> Team effort is strong – keep learning and keep playing!
         I'm cheering for each one of you!
       </speak>`,
-
       `<speak>
         Heads up team! It’s time for your score update!
         Top scorer goes to ${first.name} with ${first.score} points. 
@@ -66,7 +63,6 @@ router.post("/", async (req, res) => {
         This is a tight race!
         Who’s gonna surprise me next round?
       </speak>`,
-
       `<speak>
         Ding ding ding! Score alert incoming!
         ${first.name} is blazing at the top with ${first.score} points.
@@ -79,24 +75,32 @@ router.post("/", async (req, res) => {
     const randomIndex = Math.floor(Math.random() * announcements.length);
     const ssml = announcements[randomIndex];
 
-    const vmResponse = await axios.post(
-      "https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef",
+    // 1. Trigger Quiz Score (routine trigger)
+    const routineTrigger = await axios.post(
+      "https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef"
+    );
+
+    // 2. Trigger Actual Speaker with SSML
+    const speakerAnnounce = await axios.post(
+      "https://api-v2.voicemonkey.io/trigger",
       {
-        trigger: "announce_scores",
-        announcement: ssml
+        monkey: "your_speaker_id", // Ganti dengan ID speaker (bukan quiz_score)
+        announcement: ssml,
+        ssml: true,
       },
       {
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.VM_API_TOKEN}`,
+        },
       }
     );
 
     return res.status(200).json({
-      message: "VoiceMonkey announcement triggered",
-      vmResponse: vmResponse.data
+      message: "VoiceMonkey triggered",
+      routineTrigger: routineTrigger.data,
+      speakerAnnounce: speakerAnnounce.data,
     });
-
   } catch (err) {
     console.error("VoiceMonkey Trigger Error:", err.message);
     return res.status(500).json({ error: "Something went wrong", detail: err.message });
