@@ -11,7 +11,6 @@ const supabase = createClient(
 
 router.post("/", async (req, res) => {
   try {
-    // Step 1: Get all scores
     const { data, error } = await supabase
       .from("alexa_score")
       .select("child_id, score");
@@ -20,7 +19,6 @@ router.post("/", async (req, res) => {
       return res.status(500).json({ error: "Failed to fetch scores" });
     }
 
-    // Step 2: Summarize score per child
     const scores = data.reduce((acc, row) => {
       const name = row.child_id?.toLowerCase();
       acc[name] = (acc[name] || 0) + (row.score ?? 0);
@@ -33,42 +31,38 @@ router.post("/", async (req, res) => {
       { name: "Zakwan", score: scores["zakwan"] ?? 0 }
     ];
 
-    // Step 3: Sort
     const sorted = allScores.sort((a, b) => b.score - a.score);
     const [first, second, third] = sorted;
 
-    // Step 4: Randomize announcement
-    const messages = [
-      "Semangat luar biasa! Irfan mendahului dengan {score} mata!",
-      "Wah! Markah tertinggi milik Irfan hari ni, teruskan usaha!",
-      "Irfan sedang leading, tapi Naufal dan Zakwan boleh kejar lagi!",
-      "Tahniah Irfan! Anda di tempat pertama dengan {score} markah!",
-      "Game on! Irfan di depan, siapa nak potong dia?"
-    ];
+    const message = `<speak>
+      <amazon:emotion name='excited' intensity='high'>
+        Hebat! ${first.name} leads dengan ${first.score} markah!
+      </amazon:emotion>
+      <break time='0.5s'/>
+      ${second.name} ada ${second.score} markah, dan ${third.name} pula ${third.score}.
+      <break time='0.4s'/>
+      Teruskan usaha semua!
+    </speak>`;
 
-    const randomIndex = Math.floor(Math.random() * messages.length);
-    const finalText = messages[randomIndex].replace("{score}", first.score);
-
-    // Step 5: Send to VoiceMonkey
-    const vmResponse = await axios.post(
-      "https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef", // 🔁 Ganti token/id betoi
-      {
-        announcement: finalText,
-        ssml: false,
+    const response = await axios.post("https://api-v2.voicemonkey.io/announcement", {
+      device: "echo-dot",
+      announcement: message,
+      ssml: true
+    }, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.VM_API_TOKEN}`
       }
-    );
+    });
 
     return res.json({
       message: "VoiceMonkey announcement sent",
-      data: vmResponse.data
+      data: response.data
     });
 
   } catch (err) {
     console.error("VoiceMonkey Trigger Error:", err.message);
-    return res.status(500).json({
-      error: "Something went wrong",
-      detail: err.message
-    });
+    return res.status(500).json({ error: "Something went wrong", detail: err.message });
   }
 });
 
