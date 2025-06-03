@@ -14,6 +14,7 @@ import handleAlexaRoute from "./routes/handleAlexa.js";
 import getAlexaScoresRoute from "./routes/getAlexaScores.js";
 import handleAlexaAnnounceScoresRoute from "./routes/handleAlexaAnnounceScores.js";
 import handleMonkeyAnnounceScoresRoute from "./routes/handleMonkeyAnnounceScores.js";
+import handleNovaAnnounceScoresRoute from "./routes/handleNovaAnnounceScores.js";
 dotenv.config();
 
 const app = express();
@@ -51,6 +52,7 @@ app.use("/api/handleAlexa", handleAlexaRoute);
 app.use("/api/getAlexaScores", getAlexaScoresRoute);
 app.use("/api/handleAlexaAnnounceScores", handleAlexaAnnounceScoresRoute);
 app.use("/api/handleMonkeyAnnounceScores", handleMonkeyAnnounceScoresRoute);
+app.use("/api/handleNovaAnnounceScores", handleNovaAnnounceScoresRoute);
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
