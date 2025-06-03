@@ -42,7 +42,7 @@ router.post("/", async (req, res) => {
 
     // Trigger VoiceMonkey Routine Trigger
     const vmResponse = await axios.post(
-      "https://api.voicemonkey.io/v2/trigger",
+        "https://api-v2.voicemonkey.io/trigger",
       {
         trigger: "quiz-score", // 🟢 Match dengan Device ID Routine Trigger
         announcement,
