@@ -59,7 +59,7 @@ router.post("/", async (req, res) => {
       model: "tts-1-hd",
       voice: "nova",
       input: ssml,
-      response_format: "b64_json"
+      response_format: "mp3"
     });
 
     return res.json({
