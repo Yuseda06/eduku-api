@@ -46,7 +46,7 @@ router.post("/", async (req, res) => {
     const vmResponse = await axios.post(
       "https://api.voicemonkey.io/v2/monkey/trigger",
       {
-        monkey: "quiz_score", // Monkey name (lowercase)
+        monkey: "quiz-score", // Monkey name (lowercase)
         announcement,
         device: "all" // or specify device if needed
       },
