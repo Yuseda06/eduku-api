@@ -11,6 +11,7 @@ const supabase = createClient(
 
 router.post("/", async (req, res) => {
   try {
+    // Step 1: Get all scores
     const { data, error } = await supabase
       .from("alexa_score")
       .select("child_id, score");
@@ -19,6 +20,7 @@ router.post("/", async (req, res) => {
       return res.status(500).json({ error: "Failed to fetch scores" });
     }
 
+    // Step 2: Summarize score per child
     const scores = data.reduce((acc, row) => {
       const name = row.child_id?.toLowerCase();
       acc[name] = (acc[name] || 0) + (row.score ?? 0);
@@ -31,72 +33,42 @@ router.post("/", async (req, res) => {
       { name: "Zakwan", score: scores["zakwan"] ?? 0 }
     ];
 
+    // Step 3: Sort
     const sorted = allScores.sort((a, b) => b.score - a.score);
     const [first, second, third] = sorted;
 
-    const announcements = [
-      `<speak>
-        Whoa! <emphasis level="strong">${first.name}</emphasis> is on fire with <say-as interpret-as="cardinal">${first.score}</say-as> points! 
-        Coming up next is ${second.name}, scoring a solid ${second.score}.
-        ${third.name} isn’t far behind with ${third.score}, keep it up!
-        <break time="400ms"/> You all are doing amazing, I’m super proud of your effort.
-        Let's see who can top the chart next!
-      </speak>`,
-      `<speak>
-        Hey hey hey! Here’s your quiz leaderboard update!
-        ${first.name} leads the game with ${first.score} points.
-        ${second.name} is chasing close behind with ${second.score}.
-        ${third.name} is still in the game with ${third.score} points.
-        Keep pushing and don’t stop now!
-      </speak>`,
-      `<speak>
-        Alright quiz warriors! <emphasis level="moderate">${first.name}</emphasis> is smashing it with ${first.score} points!
-        ${second.name} is giving a good fight with ${second.score}.
-        ${third.name} has ${third.score} points and still got time to rise up!
-        <break time="300ms"/> Team effort is strong – keep learning and keep playing!
-        I'm cheering for each one of you!
-      </speak>`,
-      `<speak>
-        Heads up team! It’s time for your score update!
-        Top scorer goes to ${first.name} with ${first.score} points. 
-        ${second.name} is still holding on with ${second.score}, and ${third.name} follows with ${third.score}.
-        This is a tight race!
-        Who’s gonna surprise me next round?
-      </speak>`,
-      `<speak>
-        Ding ding ding! Score alert incoming!
-        ${first.name} is blazing at the top with ${first.score} points.
-        ${second.name} isn’t backing down with ${second.score}.
-        ${third.name} keeps it steady at ${third.score}.
-        Keep learning, keep shining!
-      </speak>`
+    // Step 4: Randomize announcement template
+    const templates = [
+      `<speak><amazon:emotion name="excited" intensity="high">Yuhuuu! ${first.name} is leading with ${first.score} points!</amazon:emotion><break time="0.5s"/> ${second.name} is second with ${second.score}, and ${third.name} is close behind with ${third.score}. Let's keep the fire burning!</speak>`,
+
+      `<speak>${first.name} tops the chart with ${first.score} points. ${second.name} is catching up with ${second.score}, and ${third.name} has ${third.score}. Keep pushing forward!</speak>`,
+
+      `<speak><amazon:emotion name="excited" intensity="medium">Bravo ${first.name}!</amazon:emotion> You've got ${first.score} points. ${second.name} is not far behind with ${second.score}, and ${third.name} has ${third.score}. All of you are amazing!</speak>`,
+
+      `<speak>Here's your current quiz ranking! <break time="0.3s"/> ${first.name}: ${first.score} points. ${second.name}: ${second.score}. ${third.name}: ${third.score}. Well done!</speak>`,
+
+      `<speak>The scoreboard says: ${first.name} is number one with ${first.score}! ${second.name} follows with ${second.score}, and ${third.name} is at ${third.score}. Keep up the good work!</speak>`
     ];
 
-    const randomIndex = Math.floor(Math.random() * announcements.length);
-    const ssml = announcements[randomIndex];
+    const randomSSML = templates[Math.floor(Math.random() * templates.length)];
 
-    // 1. Trigger Quiz Score (routine trigger)
-    const routineTrigger = await axios.post(
-      "https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef"
-    );
-
-    // 2. Trigger Actual Speaker with SSML
-    const speakerAnnounce = axios.post("https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef", {
-        announcement: ssml,
+    // Step 5: Trigger VoiceMonkey Webhook
+    const response = await axios.post(
+      "https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef",
+      {
+        announcement: randomSSML,
         ssml: true
       },
       {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.VM_API_TOKEN}`,
-        },
+          "Content-Type": "application/json"
+        }
       }
     );
 
-    return res.status(200).json({
-      message: "VoiceMonkey triggered",
-      routineTrigger: routineTrigger.data,
-      speakerAnnounce: speakerAnnounce.data,
+    return res.json({
+      message: "VoiceMonkey announcement sent",
+      data: response.data
     });
   } catch (err) {
     console.error("VoiceMonkey Trigger Error:", err.message);
