@@ -81,12 +81,9 @@ router.post("/", async (req, res) => {
     );
 
     // 2. Trigger Actual Speaker with SSML
-    const speakerAnnounce = await axios.post(
-      "https://api-v2.voicemonkey.io/trigger",
-      {
-        monkey: "your_speaker_id", // Ganti dengan ID speaker (bukan quiz_score)
+    const speakerAnnounce = axios.post("https://webhooks.voicemonkey.io/catch/6a25a12af8d6de8275da7bdf1489511a/55f6c1bbef", {
         announcement: ssml,
-        ssml: true,
+        ssml: true
       },
       {
         headers: {
