@@ -23,10 +23,10 @@ router.post("/", async (req, res) => {
         response: {
           outputSpeech: {
             type: "PlainText",
-            text: "There was an error fetching the scores."
+            text: "There was an error fetching the scores.",
           },
-          shouldEndSession: true
-        }
+          shouldEndSession: true,
+        },
       });
     }
 
@@ -39,14 +39,16 @@ router.post("/", async (req, res) => {
     const allScores = [
       { name: "Irfan", score: scores["irfan"] ?? 0 },
       { name: "Naufal", score: scores["naufal"] ?? 0 },
-      { name: "Zakwan", score: scores["zakwan"] ?? 0 }
+      { name: "Zakwan", score: scores["zakwan"] ?? 0 },
     ];
 
     const sorted = [...allScores].sort((a, b) => b.score - a.score);
     const [first, second, third] = sorted;
 
     // Ayat untuk markah semua
-    const fullScoresText = `Irfan has ${scores["irfan"] ?? 0}, Naufal has ${scores["naufal"] ?? 0}, and Zakwan has ${scores["zakwan"] ?? 0} points.`;
+    const fullScoresText = `Irfan has ${scores["irfan"] ?? 0}, Naufal has ${
+      scores["naufal"] ?? 0
+    }, and Zakwan has ${scores["zakwan"] ?? 0} points.`;
 
     // 5 random template
     const templates = [
@@ -80,6 +82,8 @@ router.post("/", async (req, res) => {
         ${first.name} leads, but everyone’s doing great.
         <break time="0.3s"/>
         ${fullScoresText}
+
+        
       </speak>`,
 
       `<speak>
@@ -88,7 +92,12 @@ router.post("/", async (req, res) => {
         ${fullScoresText}
         <break time="0.3s"/>
         Let's see who climbs to the top next!
-      </speak>`
+      </speak>`,
+      `<speak><amazon:emotion name="excited" intensity="high">${first.name} paling hebat dengan ${first.score} markah! ${second.name} dan ${third.name}, jangan mengalah!</amazon:emotion></speak>`,
+      `<speak>Pertandingan semakin sengit! ${first.name} sedang mendahului dengan ${first.score} markah. ${second.name} di tempat kedua, dan ${third.name} sedang cuba mengejar!</speak>`,
+      `<speak>Markah terkini diumumkan! ${first.name}: ${first.score}, ${second.name}: ${second.score}, ${third.name}: ${third.score}. Teruskan usaha semua!</speak>`,
+      `<speak>Hebat! ${first.name} sedang mendahului. Tapi ${second.name} dan ${third.name} masih ada peluang untuk potong!</speak>`,
+      `<speak>${first.name} di tempat pertama dengan ${first.score}. ${second.name} dan ${third.name}, semangat kena kekal tinggi!</speak>`,
     ];
 
     const randomIndex = Math.floor(Math.random() * templates.length);
@@ -99,12 +108,11 @@ router.post("/", async (req, res) => {
       response: {
         outputSpeech: {
           type: "SSML",
-          ssml
+          ssml,
         },
-        shouldEndSession: true
-      }
+        shouldEndSession: true,
+      },
     });
-
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({
@@ -112,10 +120,10 @@ router.post("/", async (req, res) => {
       response: {
         outputSpeech: {
           type: "PlainText",
-          text: "Sorry, something went wrong."
+          text: "Sorry, something went wrong.",
         },
-        shouldEndSession: true
-      }
+        shouldEndSession: true,
+      },
     });
   }
 });
