@@ -23,6 +23,14 @@ router.post("/", async (req, res) => {
             1. Meaning 1
             2. Meaning 2
             3. Meaning 3
+
+            Tenses:
+            Present Simple
+            Present Continuous
+            Present Perfect
+            Present Perfect Continuous
+            Past Simple
+            
             Translate: ${text}`,
         },
       ],
