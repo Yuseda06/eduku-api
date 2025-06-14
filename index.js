@@ -15,13 +15,13 @@ import getAlexaScoresRoute from "./routes/getAlexaScores.js";
 import handleAlexaAnnounceScoresRoute from "./routes/handleAlexaAnnounceScores.js";
 import handleMonkeyAnnounceScoresRoute from "./routes/handleMonkeyAnnounceScores.js";
 import handleNovaAnnounceScoresRoute from "./routes/handleNovaAnnounceScores.js";
+
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// ✅ Fix: Setup CORS betul
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net" || "http://localhost:8081")
+// ✅ CORS setup (boleh tweak ikut keperluan)
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://www.c3app.net,http://localhost:8081")
   .split(",")
   .map(origin => origin.trim());
 
@@ -39,7 +39,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ Route
+// ✅ All routes here
 app.use("/api/getResponse", getResponseRoute);
 app.use("/api/getTranslation", getTranslationRoute);
 app.use("/api/getSentence", getSentenceRoute);
@@ -54,3 +54,4 @@ app.use("/api/handleAlexaAnnounceScores", handleAlexaAnnounceScoresRoute);
 app.use("/api/handleMonkeyAnnounceScores", handleMonkeyAnnounceScoresRoute);
 app.use("/api/handleNovaAnnounceScores", handleNovaAnnounceScoresRoute);
 
+export default app;
