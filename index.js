@@ -6,6 +6,7 @@ import getResponseRoute from "./routes/getResponse.js";
 import getTranslationRoute from "./routes/getTranslation.js";
 import getSentenceRoute from "./routes/getSentence.js";
 import generateImageRoute from "./routes/generateImage.js";
+import getHadithsRoute from "./routes/getHadiths.js";
 import ttsRoute from "./routes/tts.js";
 import pronounceRoute from "./routes/pronounce.js";
 import getChoicesRoute from "./routes/getChoices.js";
@@ -15,6 +16,7 @@ import getAlexaScoresRoute from "./routes/getAlexaScores.js";
 import handleAlexaAnnounceScoresRoute from "./routes/handleAlexaAnnounceScores.js";
 import handleMonkeyAnnounceScoresRoute from "./routes/handleMonkeyAnnounceScores.js";
 import handleNovaAnnounceScoresRoute from "./routes/handleNovaAnnounceScores.js";
+import handleAlexaAnnounceHadithRoute from "./routes/handleAlexaAnnounceHadith.js";
 
 dotenv.config();
 
@@ -53,5 +55,7 @@ app.use("/api/getAlexaScores", getAlexaScoresRoute);
 app.use("/api/handleAlexaAnnounceScores", handleAlexaAnnounceScoresRoute);
 app.use("/api/handleMonkeyAnnounceScores", handleMonkeyAnnounceScoresRoute);
 app.use("/api/handleNovaAnnounceScores", handleNovaAnnounceScoresRoute);
+app.use("/api/handleAlexaAnnounceHadith", handleAlexaAnnounceHadithRoute);
+app.use("/api/getHadiths", getHadithsRoute);
 
 export default app;
