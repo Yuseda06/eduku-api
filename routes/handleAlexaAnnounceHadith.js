@@ -19,7 +19,7 @@ router.post("/", async (req, res) => {
       response: {
         outputSpeech: {
           type: "PlainText",
-          text: `${header} ${hadith} (Hadith No: ${refno})`,
+          text: `${header} ${hadith} (Hadith Number: ${refno})`,
         },
         shouldEndSession: true,
       },
