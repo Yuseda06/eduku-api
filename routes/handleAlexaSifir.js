@@ -44,6 +44,12 @@ router.post("/", async (req, res) => {
     sessionAttributes: { ...sessionAttr },
   };
 
+  const children = {
+    1: "Irfan",
+    2: "Naufal",
+    3: "Zakwan",
+  };
+
   // 1️⃣ LaunchRequest
   if (requestType === "LaunchRequest") {
     response.response.outputSpeech.text =
@@ -53,12 +59,13 @@ router.post("/", async (req, res) => {
 
   // 2️⃣ SelectChildIntent
   if (intentName === "SelectChildIntent") {
-    const selectedChild =
-      req.body.request.intent?.slots?.child_number?.resolutions?.resolutionsPerAuthority?.[0]?.values?.[0]?.value?.id;
+    const childNum = parseInt(req.body.request.intent?.slots?.child_number?.value);
+    const childName = children[childNum];
 
-    if (selectedChild) {
-      response.sessionAttributes.childId = selectedChild;
-      response.response.outputSpeech.text = `Okay! Quiz will be for ${selectedChild}. Say 'start quiz' to begin.`;
+    if (childName) {
+      response.sessionAttributes.childId = childNum;
+      response.sessionAttributes.childName = childName;
+      response.response.outputSpeech.text = `Okay! Quiz will be for ${childName}. Say 'start quiz' to begin.`;
     } else {
       response.response.outputSpeech.text =
         "I didn't catch that. Say one for Irfan, two for Naufal, or three for Zakwan.";
@@ -69,7 +76,8 @@ router.post("/", async (req, res) => {
   // 3️⃣ StartQuizIntent → generate random multiplication question
   if (intentName === "StartQuizIntent") {
     const childId = sessionAttr.childId;
-    if (!childId) {
+    const childName = sessionAttr.childName;
+    if (!childId || !childName) {
       response.response.outputSpeech.text =
         "Please select a child first by saying one for Irfan, two for Naufal, or three for Zakwan.";
       return res.json(response);
@@ -83,7 +91,7 @@ router.post("/", async (req, res) => {
     response.sessionAttributes.b = b;
     response.sessionAttributes.correctAnswer = correctAnswer;
 
-    response.response.outputSpeech.text = `What is ${a} times ${b}?`;
+    response.response.outputSpeech.text = `Alright ${childName}, what is ${a} times ${b}?`;
     return res.json(response);
   }
 
@@ -94,6 +102,7 @@ router.post("/", async (req, res) => {
     const a = sessionAttr.a;
     const b = sessionAttr.b;
     const childId = sessionAttr.childId;
+    const childName = sessionAttr.childName;
 
     if (!a || !b || !childId) {
       response.response.outputSpeech.text =
@@ -103,14 +112,14 @@ router.post("/", async (req, res) => {
 
     if (userAnswer === correctAnswer) {
       const msg = randomCorrectResponse(a, b, correctAnswer);
-      response.response.outputSpeech.text = msg + " Say 'next question' to continue.";
+      response.response.outputSpeech.text = `${msg} Say 'next question' to continue.`;
 
       try {
         await supabase.from("alexa_score").insert([
           {
             child_id: childId,
             score: 1,
-            section: "vocab",
+            section: "math",
           },
         ]);
       } catch (e) {
@@ -120,7 +129,7 @@ router.post("/", async (req, res) => {
       response.response.outputSpeech.text = `Oops! The correct answer is ${correctAnswer}. Say 'next question' to try another one.`;
     }
 
-    // clear previous question
+    // clear question
     response.sessionAttributes.a = null;
     response.sessionAttributes.b = null;
     response.sessionAttributes.correctAnswer = null;
@@ -128,8 +137,15 @@ router.post("/", async (req, res) => {
     return res.json(response);
   }
 
-  // 5️⃣ NextQuestionIntent → auto next without restart
+  // 5️⃣ NextQuestionIntent → auto next
   if (intentName === "NextQuestionIntent") {
+    const childName = sessionAttr.childName;
+    if (!childName) {
+      response.response.outputSpeech.text =
+        "Please select a child first by saying one for Irfan, two for Naufal, or three for Zakwan.";
+      return res.json(response);
+    }
+
     const a = randomNum();
     const b = randomNum();
     const correctAnswer = a * b;
@@ -138,7 +154,7 @@ router.post("/", async (req, res) => {
     response.sessionAttributes.b = b;
     response.sessionAttributes.correctAnswer = correctAnswer;
 
-    response.response.outputSpeech.text = `Okay! What is ${a} times ${b}?`;
+    response.response.outputSpeech.text = `Okay ${childName}, what is ${a} times ${b}?`;
     return res.json(response);
   }
 
