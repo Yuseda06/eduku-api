@@ -1,20 +1,21 @@
-import express from "express";
+﻿import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 
 dotenv.config();
-const app = express();
-app.use(express.json());
+const router = express.Router();
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Helper to generate random numbers for multiplication
 function randomNum() {
   return Math.floor(Math.random() * 11) + 2;
 }
 
+// Helper for varied correct responses
 function randomCorrectResponse(a, b, correctAnswer) {
   const responses = [
     `Correct! ${a} times ${b} equals ${correctAnswer}. Great job!`,
@@ -26,127 +27,130 @@ function randomCorrectResponse(a, b, correctAnswer) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-app.post("/", async (req, res) => {
-  const body = req.body;
-  const requestType = body.request?.type;
-  const intentName = body.request?.intent?.name;
-  const session = body.session || {};
-  const attributes = session.attributes || {};
+router.post("/", async (req, res) => {
+  const requestType = req.body.request?.type;
+  const intentName = req.body.request?.intent?.name;
+  const sessionAttr = req.body.session?.attributes ?? {}; // FIXED here âœ”ï¸
 
-  let outputSpeech = "";
-  let newSessionAttributes = { ...attributes };
-
-  const children = {
-    1: "Irfan",
-    2: "Naufal",
-    3: "Zakwan",
+  const response = {
+    version: "1.0",
+    response: {
+      shouldEndSession: false,
+      outputSpeech: {
+        type: "PlainText",
+        text: "",
+      },
+    },
+    sessionAttributes: { ...sessionAttr },
   };
 
-  // Launch
+  // 1. SelectChildIntent
+  if (intentName === "SelectChildIntent") {
+    const childNum = parseInt(req.body.request.intent?.slots?.child_number?.value);
+    const childMap = { 1: "Irfan", 2: "Naufal", 3: "Zakwan" };
+    const selectedChild = childMap[childNum];
+
+    if (selectedChild) {
+      response.sessionAttributes.childId = selectedChild;
+      response.response.outputSpeech.text = `Alright! I've set the math quiz for ${selectedChild}. Say 'start quiz' to begin.`;
+    } else {
+      response.response.outputSpeech.text = "Sorry, I didn't get the number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+    }
+    return res.json(response);
+  }
+
+  // 2. LaunchRequest
   if (requestType === "LaunchRequest") {
-    outputSpeech =
-      "Welcome to Eduku Math Quiz! Please say your child's number. For example, say one for Irfan, two for Naufal, or three for Zakwan.";
+    response.response.outputSpeech.text = "Welcome to Eduku Math Quiz! Say 'start quiz' to begin.";
+    return res.json(response);
   }
 
-  // Select child
-  else if (intentName === "SelectChildIntent") {
-    const childNum = parseInt(body.request.intent?.slots?.child_number?.value);
-    const childName = children[childNum];
+  // 3. StartQuizIntent or QuizIntent
+  if (requestType === "IntentRequest" && (intentName === "StartQuizIntent" || intentName === "QuizIntent" || intentName === "NextQuestionIntent")) {
+    const childId = sessionAttr.childId;
 
-    if (childName) {
-      newSessionAttributes.childId = childNum;
-      newSessionAttributes.childName = childName;
-      outputSpeech = `Okay! Quiz will be for ${childName}. Say 'start quiz' to begin.`;
-    } else {
-      outputSpeech =
-        "I didn't catch that. Say one for Irfan, two for Naufal, or three for Zakwan.";
+    if (!childId) {
+      response.response.outputSpeech.text = "Please select a child first by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+      return res.json(response);
     }
+
+    const a = randomNum();
+    const b = randomNum();
+    const correctAnswer = a * b;
+
+    response.sessionAttributes.a = a;
+    response.sessionAttributes.b = b;
+    response.sessionAttributes.correctAnswer = correctAnswer;
+
+    response.response.outputSpeech.text = `What is ${a} times ${b}?`;
+    return res.json(response);
   }
 
-  // Start quiz
-  else if (intentName === "StartQuizIntent") {
-    const childName = attributes.childName;
-    if (!childName) {
-      outputSpeech =
-        "Please select a child first by saying one for Irfan, two for Naufal, or three for Zakwan.";
-    } else {
-      const a = randomNum();
-      const b = randomNum();
-      const correct = a * b;
-      newSessionAttributes = { ...attributes, a, b, correctAnswer: correct };
-      outputSpeech = `Alright ${childName}, what is ${a} times ${b}?`;
-    }
-  }
+  // 4. AnswerIntent
+  if (requestType === "IntentRequest" && intentName === "AnswerIntent") {
+    const userAnswer = parseInt(req.body.request.intent?.slots?.number?.value);
+    const correctAnswer = sessionAttr.correctAnswer;
+    const a = sessionAttr.a;
+    const b = sessionAttr.b;
+    const childId = sessionAttr.childId;
 
-  // Answer intent
-  else if (intentName === "AnswerIntent") {
-    const userAnswer = parseInt(body.request.intent?.slots?.number?.value);
-    const { a, b, correctAnswer, childId, childName } = attributes;
-
-    if (!a || !b || !childId) {
-      outputSpeech = "Please start the quiz first by saying 'start quiz'.";
+    if (!correctAnswer || !childId || !a || !b) {
+      response.response.outputSpeech.text = "Please select a child and start a quiz first.";
     } else {
       if (userAnswer === correctAnswer) {
         const msg = randomCorrectResponse(a, b, correctAnswer);
-        outputSpeech = `${msg} Say 'next question' to continue.`;
-
+        response.response.outputSpeech.text = `${msg} Say 'start quiz' for another question.`;
+        
         try {
           await supabase.from("alexa_score").insert([
-            { child_id: childId, score: 1, section: "math" },
+            {
+              child_id: childId,
+              score: 1,
+              section: "math",
+            },
           ]);
         } catch (e) {
-          console.error("Insert error:", e);
+          console.error("Failed to insert score:", e);
         }
       } else {
-        outputSpeech = `Oops! The correct answer is ${correctAnswer}. Say 'next question' to try another one.`;
+        response.response.outputSpeech.text = `Oops! The correct answer is ${correctAnswer}. Try another question by saying 'start quiz'.`;
       }
-      newSessionAttributes = {
-        ...attributes,
-        a: null,
-        b: null,
-        correctAnswer: null,
-      };
     }
+
+    response.sessionAttributes.a = null;
+    response.sessionAttributes.b = null;
+    response.sessionAttributes.correctAnswer = null;
+    return res.json(response);
   }
 
-  // Next question
-  else if (intentName === "NextQuestionIntent") {
-    const { childName } = attributes;
-    if (!childName) {
-      outputSpeech =
-        "Please select a child first by saying one for Irfan, two for Naufal, or three for Zakwan.";
-    } else {
-      const a = randomNum();
-      const b = randomNum();
-      const correct = a * b;
-      newSessionAttributes = { ...attributes, a, b, correctAnswer: correct };
-      outputSpeech = `Okay ${childName}, what is ${a} times ${b}?`;
-    }
+  // 5. AMAZON.HelpIntent
+  if (intentName === "AMAZON.HelpIntent") {
+    response.response.outputSpeech.text = "This is Eduku Math Quiz. First, select your child by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan. Then say 'start quiz' to begin. I'll ask multiplication questions, and you answer with the number. You can say 'stop' or 'cancel' to end the quiz anytime.";
+    return res.json(response);
   }
 
-  // Fallback
-  else {
-    outputSpeech =
-      "Sorry, I didn’t get that. You can say 'start quiz' or 'next question'.";
+  // 6. AMAZON.StopIntent or AMAZON.CancelIntent
+  if (intentName === "AMAZON.StopIntent" || intentName === "AMAZON.CancelIntent") {
+    response.response.outputSpeech.text = "Thanks for practicing with Eduku Math Quiz. Goodbye!";
+    response.response.shouldEndSession = true;
+    response.sessionAttributes = {};
+    return res.json(response);
   }
 
-  const alexaResponse = {
-    version: "1.0",
-    sessionAttributes: newSessionAttributes,
-    response: {
-      outputSpeech: {
-        type: "PlainText",
-        text: outputSpeech,
-      },
-      shouldEndSession: false,
-    },
-  };
+  // 7. AMAZON.NavigateHomeIntent
+  if (intentName === "AMAZON.NavigateHomeIntent") {
+    response.response.outputSpeech.text = "Welcome back to Eduku Math Quiz! Please say your child's number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+    response.sessionAttributes = {};
+    return res.json(response);
+  }
 
-  res.json(alexaResponse);
+  // 8. Fallback
+  response.response.outputSpeech.text = "Sorry, I didn't understand that. Try saying 'start quiz' or 'help' for instructions.";
+  return res.json(response);
 });
 
-app.get("/", (req, res) => {
-  res.status(200).send("Eduku Alexa webhook is alive ✅");
+router.get("/", (req, res) => {
+  res.status(200).send("Eduku Math Quiz webhook is up and running.");
 });
 
-export default app;
+export default router;
