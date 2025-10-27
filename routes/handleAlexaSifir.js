@@ -46,9 +46,16 @@ router.post("/", async (req, res) => {
 
   // 1. SelectChildIntent
   if (intentName === "SelectChildIntent") {
-    const childNum = parseInt(req.body.request.intent?.slots?.child_number?.value);
-    const childMap = { 1: "Irfan", 2: "Naufal", 3: "Zakwan" };
-    const selectedChild = childMap[childNum];
+    const slotValue = req.body.request.intent?.slots?.child_number?.value;
+    
+    // Map both numbers and words
+    const childMap = { 
+      "1": "Irfan", "one": "Irfan",
+      "2": "Naufal", "two": "Naufal",
+      "3": "Zakwan", "three": "Zakwan"
+    };
+    
+    const selectedChild = childMap[slotValue?.toLowerCase()] || childMap[slotValue];
 
     if (selectedChild) {
       response.sessionAttributes.childId = selectedChild;
