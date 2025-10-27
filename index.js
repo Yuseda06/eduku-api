@@ -17,6 +17,7 @@ import handleAlexaAnnounceScoresRoute from "./routes/handleAlexaAnnounceScores.j
 import handleMonkeyAnnounceScoresRoute from "./routes/handleMonkeyAnnounceScores.js";
 import handleNovaAnnounceScoresRoute from "./routes/handleNovaAnnounceScores.js";
 import handleAlexaAnnounceHadithRoute from "./routes/handleAlexaAnnounceHadith.js";
+import handleAlexaSifirRoute from "./routes/handleAlexaSifir.js";
 
 dotenv.config();
 
@@ -57,5 +58,6 @@ app.use("/api/handleMonkeyAnnounceScores", handleMonkeyAnnounceScoresRoute);
 app.use("/api/handleNovaAnnounceScores", handleNovaAnnounceScoresRoute);
 app.use("/api/handleAlexaAnnounceHadith", handleAlexaAnnounceHadithRoute);
 app.use("/api/getHadiths", getHadithsRoute);
+app.use("/api/handleAlexaSifir", handleAlexaSifirRoute);
 
 export default app;
