@@ -26,7 +26,7 @@ function randomCorrectResponse(a, b, correctAnswer) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-app.post("/api/alexa", async (req, res) => {
+app.post("/", async (req, res) => {
   const body = req.body;
   const requestType = body.request?.type;
   const intentName = body.request?.intent?.name;
@@ -145,7 +145,7 @@ app.post("/api/alexa", async (req, res) => {
   res.json(alexaResponse);
 });
 
-app.get("/api/alexa", (req, res) => {
+app.get("/", (req, res) => {
   res.status(200).send("Eduku Alexa webhook is alive ✅");
 });
 
