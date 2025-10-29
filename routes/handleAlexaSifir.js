@@ -107,6 +107,20 @@ router.post("/", async (req, res) => {
     const b = sessionAttr.b;
     const childId = sessionAttr.childId;
 
+    // If no child selected yet, treat this as child selection
+    if (!childId && userAnswer >= 1 && userAnswer <= 3) {
+      const childMap = {
+        1: "Irfan",
+        2: "Naufal",
+        3: "Zakwan",
+      };
+
+      const selectedChild = childMap[userAnswer];
+      response.sessionAttributes.childId = selectedChild;
+      response.response.outputSpeech.text = `Alright! I've set the math quiz for ${selectedChild}. Say 'start quiz' to begin.`;
+      return res.json(response);
+    }
+
     if (!correctAnswer || !childId || !a || !b) {
       response.response.outputSpeech.text =
         "Please select a child and start a quiz first.";
