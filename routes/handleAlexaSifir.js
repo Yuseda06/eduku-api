@@ -134,7 +134,7 @@ router.post("/", async (req, res) => {
             {
               child_id: childId,
               score: 1,
-              section: "math",
+              section: "vocab",
             },
           ]);
         } catch (e) {
