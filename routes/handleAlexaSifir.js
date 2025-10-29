@@ -22,7 +22,7 @@ function randomCorrectResponse(a, b, correctAnswer) {
     `Nice! ${a} multiplied by ${b} is ${correctAnswer}. Keep it up!`,
     `You're right! ${a} times ${b} is ${correctAnswer}.`,
     `Excellent! The answer is ${correctAnswer}.`,
-    `Spot on! ${a} times ${b} equals ${correctAnswer}.`
+    `Spot on! ${a} times ${b} equals ${correctAnswer}.`,
   ];
   return responses[Math.floor(Math.random() * responses.length)];
 }
@@ -30,7 +30,7 @@ function randomCorrectResponse(a, b, correctAnswer) {
 router.post("/", async (req, res) => {
   const requestType = req.body.request?.type;
   const intentName = req.body.request?.intent?.name;
-  const sessionAttr = req.body.session?.attributes ?? {}; // FIXED here âœ”ï¸
+  const sessionAttr = req.body.session?.attributes ?? {};
 
   const response = {
     version: "1.0",
@@ -47,37 +47,43 @@ router.post("/", async (req, res) => {
   // 1. SelectChildIntent
   if (intentName === "SelectChildIntent") {
     const slotValue = req.body.request.intent?.slots?.child_number?.value;
-    
-    // Map both numbers and words
-    const childMap = { 
-      "1": "Irfan", "one": "Irfan",
-      "2": "Naufal", "two": "Naufal",
-      "3": "Zakwan", "three": "Zakwan"
+
+    // Map numbers only (since using AMAZON.NUMBER)
+    const childMap = {
+      1: "Irfan",
+      2: "Naufal",
+      3: "Zakwan",
     };
-    
-    const selectedChild = childMap[slotValue?.toLowerCase()] || childMap[slotValue];
+
+    const selectedChild = childMap[slotValue];
 
     if (selectedChild) {
       response.sessionAttributes.childId = selectedChild;
       response.response.outputSpeech.text = `Alright! I've set the math quiz for ${selectedChild}. Say 'start quiz' to begin.`;
     } else {
-      response.response.outputSpeech.text = "Sorry, I didn't get the number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+      response.response.outputSpeech.text =
+        "Sorry, I didn't get the number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
     }
     return res.json(response);
   }
 
   // 2. LaunchRequest
   if (requestType === "LaunchRequest") {
-    response.response.outputSpeech.text = "Welcome to Eduku Math Quiz! Say 'start quiz' to begin.";
+    response.response.outputSpeech.text =
+      "Welcome to Eduku Math Quiz! Please select your child. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
     return res.json(response);
   }
 
-  // 3. StartQuizIntent or QuizIntent
-  if (requestType === "IntentRequest" && (intentName === "StartQuizIntent" || intentName === "QuizIntent" || intentName === "NextQuestionIntent")) {
+  // 3. StartQuizIntent or NextQuestionIntent
+  if (
+    requestType === "IntentRequest" &&
+    (intentName === "StartQuizIntent" || intentName === "NextQuestionIntent")
+  ) {
     const childId = sessionAttr.childId;
 
     if (!childId) {
-      response.response.outputSpeech.text = "Please select a child first by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+      response.response.outputSpeech.text =
+        "Please select a child first by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
       return res.json(response);
     }
 
@@ -102,12 +108,13 @@ router.post("/", async (req, res) => {
     const childId = sessionAttr.childId;
 
     if (!correctAnswer || !childId || !a || !b) {
-      response.response.outputSpeech.text = "Please select a child and start a quiz first.";
+      response.response.outputSpeech.text =
+        "Please select a child and start a quiz first.";
     } else {
       if (userAnswer === correctAnswer) {
         const msg = randomCorrectResponse(a, b, correctAnswer);
-        response.response.outputSpeech.text = `${msg} Say 'start quiz' for another question.`;
-        
+        response.response.outputSpeech.text = `${msg} Say 'next question' or 'start quiz' for another question.`;
+
         try {
           await supabase.from("alexa_score").insert([
             {
@@ -120,10 +127,11 @@ router.post("/", async (req, res) => {
           console.error("Failed to insert score:", e);
         }
       } else {
-        response.response.outputSpeech.text = `Oops! The correct answer is ${correctAnswer}. Try another question by saying 'start quiz'.`;
+        response.response.outputSpeech.text = `Oops! The correct answer is ${correctAnswer}. Try another question by saying 'next question' or 'start quiz'.`;
       }
     }
 
+    // Clear question data but keep childId
     response.sessionAttributes.a = null;
     response.sessionAttributes.b = null;
     response.sessionAttributes.correctAnswer = null;
@@ -132,13 +140,18 @@ router.post("/", async (req, res) => {
 
   // 5. AMAZON.HelpIntent
   if (intentName === "AMAZON.HelpIntent") {
-    response.response.outputSpeech.text = "This is Eduku Math Quiz. First, select your child by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan. Then say 'start quiz' to begin. I'll ask multiplication questions, and you answer with the number. You can say 'stop' or 'cancel' to end the quiz anytime.";
+    response.response.outputSpeech.text =
+      "This is Eduku Math Quiz. First, select your child by saying 1 for Irfan, 2 for Naufal, or 3 for Zakwan. Then say 'start quiz' to begin. I'll ask multiplication questions, and you answer with the number. Say 'next question' for another question. You can say 'stop' or 'cancel' to end the quiz anytime.";
     return res.json(response);
   }
 
   // 6. AMAZON.StopIntent or AMAZON.CancelIntent
-  if (intentName === "AMAZON.StopIntent" || intentName === "AMAZON.CancelIntent") {
-    response.response.outputSpeech.text = "Thanks for practicing with Eduku Math Quiz. Goodbye!";
+  if (
+    intentName === "AMAZON.StopIntent" ||
+    intentName === "AMAZON.CancelIntent"
+  ) {
+    response.response.outputSpeech.text =
+      "Thanks for practicing with Eduku Math Quiz. Goodbye!";
     response.response.shouldEndSession = true;
     response.sessionAttributes = {};
     return res.json(response);
@@ -146,13 +159,29 @@ router.post("/", async (req, res) => {
 
   // 7. AMAZON.NavigateHomeIntent
   if (intentName === "AMAZON.NavigateHomeIntent") {
-    response.response.outputSpeech.text = "Welcome back to Eduku Math Quiz! Please say your child's number. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
-    response.sessionAttributes = {};
+    const childId = sessionAttr.childId;
+    if (childId) {
+      response.response.outputSpeech.text = `Welcome back to Eduku Math Quiz! Say 'start quiz' to continue with ${childId}.`;
+      // Keep childId, clear question data
+      response.sessionAttributes = { childId: childId };
+    } else {
+      response.response.outputSpeech.text =
+        "Welcome back to Eduku Math Quiz! Please select your child. Say 1 for Irfan, 2 for Naufal, or 3 for Zakwan.";
+      response.sessionAttributes = {};
+    }
     return res.json(response);
   }
 
-  // 8. Fallback
-  response.response.outputSpeech.text = "Sorry, I didn't understand that. Try saying 'start quiz' or 'help' for instructions.";
+  // 8. AMAZON.FallbackIntent
+  if (intentName === "AMAZON.FallbackIntent") {
+    response.response.outputSpeech.text =
+      "Sorry, I didn't understand that. Try saying 'start quiz' to begin, or say 'help' for instructions.";
+    return res.json(response);
+  }
+
+  // 9. Default Fallback
+  response.response.outputSpeech.text =
+    "Sorry, I didn't understand that. Try saying 'start quiz' or 'help' for instructions.";
   return res.json(response);
 });
 
